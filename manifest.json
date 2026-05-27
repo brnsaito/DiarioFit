@@ -1,0 +1,24 @@
+{
+  "name": "Diário Saúde",
+  "short_name": "Saúde",
+  "description": "Diário de pressão arterial e acompanhamento de dieta com IA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1923",
+  "theme_color": "#0f1923",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%230f1923'/><path d='M96 140 L58 102 C44 88 44 68 58 54 C72 40 86 43 96 54 C106 43 120 40 134 54 C148 68 148 88 134 102 Z' fill='%23ff5252' opacity='0.9'/><rect x='60' y='115' width='72' height='4' rx='2' fill='%233b9eff' opacity='0.7'/><rect x='70' y='125' width='52' height='4' rx='2' fill='%233b9eff' opacity='0.5'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%230f1923'/><path d='M256 370 L155 270 C118 233 118 173 155 136 C192 99 231 105 256 136 C281 105 320 99 357 136 C394 173 394 233 357 270 Z' fill='%23ff5252' opacity='0.9'/><rect x='160' y='305' width='192' height='10' rx='5' fill='%233b9eff' opacity='0.7'/><rect x='185' y='330' width='142' height='10' rx='5' fill='%233b9eff' opacity='0.5'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "pt-BR"
+}

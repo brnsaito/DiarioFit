@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f1923">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diário Saúde">
+<title>Diário Saúde</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0f1923;
+  --bg2: #162130;
+  --bg3: #1d2d3e;
+  --card: #1a2a3a;
+  --card2: #213040;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #e8f0f8;
+  --text2: #8fa8c0;
+  --text3: #5a7a96;
+  --accent: #3b9eff;
+  --accent2: #1a6fc4;
+  --green: #2ecc87;
+  --green2: #1a8f5a;
+  --red: #ff5252;
+  --red2: #c62828;
+  --amber: #ffb74d;
+  --amber2: #e65100;
+  --purple: #b39ddb;
+  --teal: #4dd0e1;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --font: 'Space Grotesk', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); overflow: hidden; }
+
+/* ── App Shell ── */
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 480px; margin: 0 auto; position: relative; }
+
+/* ── Header ── */
+.app-header {
+  padding: 16px 20px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.app-header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.app-header h1 span { color: var(--accent); }
+.header-date { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+.ai-badge {
+  font-size: 10px; font-weight: 500; padding: 4px 8px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 20px; color: var(--accent); cursor: pointer;
+  transition: all 0.2s;
+}
+.ai-badge:hover { background: var(--card2); }
+
+/* ── Main Content ── */
+#content { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+#content::-webkit-scrollbar { display: none; }
+
+/* ── Bottom Nav ── */
+.bottom-nav {
+  display: flex; background: var(--bg2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 4px 8px; background: none; border: none; cursor: pointer;
+  color: var(--text3); transition: all 0.2s; position: relative;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active::before {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%;
+  height: 2px; background: var(--accent); border-radius: 0 0 3px 3px;
+}
+.nav-btn svg { width: 22px; height: 22px; }
+.nav-btn span { font-size: 10px; font-weight: 500; }
+
+/* ── Pages ── */
+.page { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Section Titles ── */
+.section-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text3); margin: 20px 0 10px;
+}
+.section-title:first-child { margin-top: 4px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.card-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ci-red { background: rgba(255,82,82,0.15); color: var(--red); }
+.ci-green { background: rgba(46,204,135,0.15); color: var(--green); }
+.ci-blue { background: rgba(59,158,255,0.15); color: var(--accent); }
+.ci-amber { background: rgba(255,183,77,0.15); color: var(--amber); }
+.ci-purple { background: rgba(179,157,219,0.15); color: var(--purple); }
+
+/* ── Pressure Display ── */
+.bp-display {
+  display: flex; align-items: baseline; gap: 6px;
+  margin: 6px 0 14px;
+}
+.bp-main { font-size: 42px; font-weight: 700; font-family: var(--mono); line-height: 1; letter-spacing: -2px; }
+.bp-unit { font-size: 13px; color: var(--text2); }
+.bp-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  border-radius: 20px;
+}
+.bp-normal { background: rgba(46,204,135,0.15); color: var(--green); }
+.bp-elevated { background: rgba(255,183,77,0.15); color: var(--amber); }
+.bp-high { background: rgba(255,82,82,0.15); color: var(--red); }
+.bp-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.bp-field label { display: block; font-size: 10px; color: var(--text3); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.5px; }
+.bp-field input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 8px; color: var(--text);
+  font-family: var(--mono); font-size: 18px; font-weight: 500;
+  text-align: center; transition: all 0.2s; outline: none;
+}
+.bp-field input:focus { border-color: var(--accent); background: var(--card2); }
+
+/* ── Buttons ── */
+.btn {
+  padding: 11px 18px; border-radius: var(--radius-sm); border: none;
+  font-family: var(--font); font-weight: 600; font-size: 13px;
+  cursor: pointer; transition: all 0.2s; display: inline-flex;
+  align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--card2); color: var(--text); }
+.btn-danger { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.2); }
+.btn-success { background: rgba(46,204,135,0.15); color: var(--green); border: 1px solid rgba(46,204,135,0.2); }
+.btn-full { width: 100%; justify-content: center; padding: 13px; }
+.btn-sm { padding: 7px 12px; font-size: 12px; }
+
+/* ── Form Elements ── */
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.3px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 14px; color: var(--text);
+  font-family: var(--font); font-size: 14px; outline: none; transition: all 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent); background: var(--card2);
+}
+.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a7a96' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+.form-textarea { resize: none; min-height: 80px; line-height: 1.5; }
+
+/* ── Tag Pills ── */
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.tag {
+  padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+  cursor: pointer; transition: all 0.18s; user-select: none;
+}
+.tag.active { background: rgba(59,158,255,0.15); border-color: var(--accent); color: var(--accent); }
+.tag-red.active { background: rgba(255,82,82,0.15); border-color: var(--red); color: var(--red); }
+
+/* ── Symptoms Grid ── */
+.symptoms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.symptom-btn {
+  padding: 9px 12px; border-radius: var(--radius-sm); background: var(--bg3);
+  border: 1px solid var(--border); color: var(--text2); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.18s; text-align: center;
+}
+.symptom-btn.active { background: rgba(255,82,82,0.12); border-color: rgba(255,82,82,0.4); color: var(--red); }
+
+/* ── Meals List ── */
+.meal-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.meal-item:last-child { border-bottom: none; padding-bottom: 0; }
+.meal-icon { font-size: 22px; flex-shrink: 0; }
+.meal-info { flex: 1; min-width: 0; }
+.meal-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meal-detail { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.meal-kcal { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--amber); flex-shrink: 0; }
+.meal-del { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; font-size: 16px; }
+
+/* ── Calorie Bar ── */
+.calorie-bar-wrap { margin: 12px 0 4px; }
+.calorie-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+.calorie-bar-bg { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.calorie-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; background: var(--green); }
+.calorie-bar-fill.over { background: var(--red); }
+.calorie-bar-fill.near { background: var(--amber); }
+
+/* ── AI Response ── */
+.ai-response {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm); padding: 14px; margin-top: 12px;
+  font-size: 13px; line-height: 1.7; color: var(--text2);
+  white-space: pre-wrap;
+}
+.ai-response strong { color: var(--text); }
+.ai-thinking { display: flex; align-items: center; gap: 8px; color: var(--text3); font-size: 13px; padding: 12px 0; }
+.ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+.ai-dot:nth-child(2) { animation-delay: 0.2s; }
+.ai-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100% { transform: scale(0.6); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+
+/* ── Chart Page ── */
+.chart-period-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.period-tab {
+  flex: 1; padding: 8px; border-radius: var(--radius-sm); text-align: center;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+}
+.period-tab.active { background: rgba(59,158,255,0.15); border-color: var(--accent); color: var(--accent); }
+.chart-wrap { position: relative; height: 220px; margin-bottom: 16px; }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; }
+.stat-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+.stat-val { font-size: 22px; font-family: var(--mono); font-weight: 700; }
+.stat-unit { font-size: 10px; color: var(--text2); margin-top: 1px; }
+
+/* ── Report Page ── */
+.report-card {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 20px; margin-bottom: 12px;
+}
+.report-month { font-size: 11px; color: var(--text3); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+.report-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.report-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; color: var(--text2); }
+.report-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.dot-green { background: var(--green); }
+.dot-red { background: var(--red); }
+.dot-amber { background: var(--amber); }
+
+/* ── Config Page ── */
+.config-section { margin-bottom: 20px; }
+.config-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 8px; cursor: pointer;
+  transition: all 0.2s;
+}
+.config-option:hover { background: var(--card2); }
+.config-option-info { display: flex; align-items: center; gap: 10px; }
+.config-option-text { font-size: 14px; font-weight: 500; }
+.config-option-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.config-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; }
+.config-radio.selected { border-color: var(--accent); }
+.config-radio.selected::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.api-key-field { position: relative; }
+.api-key-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text3); cursor: pointer; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100;
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal {
+  background: var(--bg2); border-top-left-radius: 24px; border-top-right-radius: 24px;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0));
+  width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+.modal::-webkit-scrollbar { display: none; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-footer { display: flex; gap: 8px; margin-top: 14px; }
+
+/* ── Scrollable logs ── */
+.log-day {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 8px; overflow: hidden;
+}
+.log-day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; cursor: pointer;
+}
+.log-day-date { font-size: 13px; font-weight: 600; }
+.log-day-summary { font-size: 12px; color: var(--text2); }
+.log-day-body { padding: 0 14px 12px; border-top: 1px solid var(--border); display: none; }
+.log-day-body.open { display: block; padding-top: 10px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: calc(70px + env(safe-area-inset-bottom, 0)); left: 50%;
+  transform: translateX(-50%) translateY(20px); background: var(--card2);
+  border: 1px solid var(--border2); border-radius: 20px;
+  padding: 10px 18px; font-size: 13px; font-weight: 500;
+  z-index: 200; opacity: 0; transition: all 0.3s ease; white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-success { border-color: rgba(46,204,135,0.4); color: var(--green); }
+.toast-error { border-color: rgba(255,82,82,0.4); color: var(--red); }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state-text { font-size: 14px; color: var(--text3); line-height: 1.6; }
+
+/* ── Divider ── */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ── Util ── */
+.flex { display: flex; } .gap-8 { gap: 8px; } .gap-6 { gap: 6px; }
+.align-center { align-items: center; } .justify-between { justify-content: space-between; }
+.text-sm { font-size: 12px; } .text-xs { font-size: 11px; } .text-muted { color: var(--text2); }
+.fw-600 { font-weight: 600; } .mono { font-family: var(--mono); }
+.mt-8 { margin-top: 8px; } .mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; }
+
+/* ── Number Scroll animation ── */
+.num-animate { transition: all 0.4s ease; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header class="app-header">
+    <div>
+      <h1>Diário <span>Saúde</span></h1>
+      <div class="header-date" id="header-date">--</div>
+    </div>
+    <button class="ai-badge" onclick="navigate('config')">⚡ IA: <span id="ai-label">—</span></button>
+  </header>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- ═══ PAGE: TODAY ═══ -->
+    <div class="page active" id="page-today">
+
+      <div class="section-title">Pressão Arterial</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon ci-red">
+              <svg viewBox="0 0 24 24" width="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            Aferição de hoje
+          </div>
+          <div class="bp-status bp-normal" id="bp-status-badge">Normal</div>
+        </div>
+
+        <div class="bp-display">
+          <div class="bp-main num-animate" id="bp-display">--/--</div>
+          <div>
+            <div class="bp-unit">mmHg</div>
+            <div class="text-xs text-muted mono" id="bpm-display" style="margin-top:2px">-- bpm</div>
+          </div>
+        </div>
+
+        <div class="bp-inputs">
+          <div class="bp-field">
+            <label>SISTÓLICA</label>
+            <input type="number" id="bp-sys" placeholder="120" min="60" max="250" inputmode="numeric">
+          </div>
+          <div class="bp-field">
+            <label>DIASTÓLICA</label>
+            <input type="number" id="bp-dia" placeholder="80" min="40" max="150" inputmode="numeric">
+          </div>
+          <div class="bp-field">
+            <label>PULSO</label>
+            <input type="number" id="bp-bpm" placeholder="70" min="30" max="200" inputmode="numeric">
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" onclick="saveBP()">
+          <svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Registrar Pressão
+        </button>
+      </div>
+
+      <div class="section-title">Sintomas e Comentários</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon ci-amber">
+              <svg viewBox="0 0 24 24" width="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            Sinais clínicos
+          </div>
+        </div>
+
+        <div class="symptoms-grid" id="symptoms-grid">
+          <button class="symptom-btn" data-s="Dor de cabeça" onclick="toggleSymptom(this)">🤕 Dor de cabeça</button>
+          <button class="symptom-btn" data-s="Tontura" onclick="toggleSymptom(this)">😵 Tontura</button>
+          <button class="symptom-btn" data-s="Náusea" onclick="toggleSymptom(this)">🤢 Náusea</button>
+          <button class="symptom-btn" data-s="Palpitações" onclick="toggleSymptom(this)">💓 Palpitações</button>
+          <button class="symptom-btn" data-s="Falta de ar" onclick="toggleSymptom(this)">😮‍💨 Falta de ar</button>
+          <button class="symptom-btn" data-s="Visão turva" onclick="toggleSymptom(this)">👁️ Visão turva</button>
+          <button class="symptom-btn" data-s="Edema" onclick="toggleSymptom(this)">🦵 Edema</button>
+          <button class="symptom-btn" data-s="Cansaço" onclick="toggleSymptom(this)">😴 Cansaço</button>
+        </div>
+
+        <div class="form-group">
+          <label>Observações livres</label>
+          <textarea class="form-textarea" id="symptoms-notes" placeholder="Descreva como você está se sentindo hoje..."></textarea>
+        </div>
+
+        <button class="btn btn-secondary btn-full" onclick="saveSymptoms()">
+          Salvar comentários
+        </button>
+      </div>
+
+      <div class="section-title">Refeições do dia</div>
+
+      <div class="card" id="meals-card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon ci-green">
+              <svg viewBox="0 0 24 24" width="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            </div>
+            Diário alimentar
+          </div>
+          <button class="btn btn-sm btn-success" onclick="openMealModal()">+ Adicionar</button>
+        </div>
+
+        <div id="meals-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🍽️</div>
+            <div class="empty-state-text">Nenhuma refeição registrada hoje.<br>Toque em "+ Adicionar" para começar.</div>
+          </div>
+        </div>
+
+        <div id="calorie-section" style="display:none">
+          <div class="calorie-bar-wrap">
+            <div class="calorie-bar-label">
+              <span>Consumido</span>
+              <span><span id="cal-total">0</span> / <span id="cal-goal">2000</span> kcal</span>
+            </div>
+            <div class="calorie-bar-bg"><div class="calorie-bar-fill" id="cal-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div id="ai-meal-response"></div>
+      </div>
+
+      <div id="ai-bp-response"></div>
+
+      <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ═══ PAGE: CHARTS ═══ -->
+    <div class="page" id="page-charts">
+
+      <div class="section-title" style="margin-top:4px">Pressão Arterial</div>
+
+      <div class="chart-period-tabs">
+        <div class="period-tab active" onclick="setChartPeriod('day', this)">Diário</div>
+        <div class="period-tab" onclick="setChartPeriod('week', this)">Semanal</div>
+        <div class="period-tab" onclick="setChartPeriod('month', this)">Mensal</div>
+      </div>
+
+      <div class="stats-row" id="bp-stats">
+        <div class="stat-box">
+          <div class="stat-label">Média</div>
+          <div class="stat-val" id="stat-avg" style="color:var(--accent)">--</div>
+          <div class="stat-unit">sys/dia</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Máxima</div>
+          <div class="stat-val" id="stat-max" style="color:var(--red)">--</div>
+          <div class="stat-unit">sistólica</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Registros</div>
+          <div class="stat-val" id="stat-count" style="color:var(--green)">0</div>
+          <div class="stat-unit">aferições</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chart-wrap">
+          <canvas id="bp-chart" role="img" aria-label="Gráfico de pressão arterial sistólica e diastólica ao longo do tempo">Dados de pressão arterial ao longo do tempo.</canvas>
+        </div>
+      </div>
+
+      <div class="section-title">Calorias</div>
+      <div class="card">
+        <div class="chart-wrap" style="height:180px">
+          <canvas id="cal-chart" role="img" aria-label="Gráfico de calorias diárias consumidas">Consumo calórico diário.</canvas>
+        </div>
+      </div>
+
+      <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ═══ PAGE: LOG ═══ -->
+    <div class="page" id="page-log">
+      <div class="section-title" style="margin-top:4px">Histórico completo</div>
+      <div id="log-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">Nenhum registro ainda.<br>Comece registrando hoje!</div>
+        </div>
+      </div>
+      <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ═══ PAGE: REPORT ═══ -->
+    <div class="page" id="page-report">
+      <div class="section-title" style="margin-top:4px">Relatório mensal</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon ci-purple">📊</div>
+            Gerar relatório
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Selecione o mês</label>
+          <input type="month" class="form-input" id="report-month">
+        </div>
+        <div class="form-group">
+          <label>Objetivo calórico diário (kcal)</label>
+          <input type="number" class="form-input" id="report-goal" placeholder="2000" inputmode="numeric">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="generateReport()">
+          <svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Gerar com IA
+        </button>
+      </div>
+
+      <div id="report-output"></div>
+      <div style="height: 20px;"></div>
+    </div>
+
+    <!-- ═══ PAGE: CONFIG ═══ -->
+    <div class="page" id="page-config">
+      <div class="section-title" style="margin-top:4px">Inteligência Artificial</div>
+
+      <div class="config-section">
+        <div class="config-option" onclick="selectAI('claude')">
+          <div class="config-option-info">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(179,157,219,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">🧠</div>
+            <div>
+              <div class="config-option-text">Claude (Anthropic)</div>
+              <div class="config-option-sub">claude-sonnet-4-20250514</div>
+            </div>
+          </div>
+          <div class="config-radio" id="radio-claude"></div>
+        </div>
+
+        <div class="config-option" onclick="selectAI('gpt')">
+          <div class="config-option-info">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(46,204,135,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">🤖</div>
+            <div>
+              <div class="config-option-text">ChatGPT (OpenAI)</div>
+              <div class="config-option-sub">gpt-4o-mini</div>
+            </div>
+          </div>
+          <div class="config-radio" id="radio-gpt"></div>
+        </div>
+
+        <div class="config-option" onclick="selectAI('gemini')">
+          <div class="config-option-info">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(59,158,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">✨</div>
+            <div>
+              <div class="config-option-text">Gemini (Google)</div>
+              <div class="config-option-sub">gemini-1.5-flash</div>
+            </div>
+          </div>
+          <div class="config-radio" id="radio-gemini"></div>
+        </div>
+      </div>
+
+      <div class="section-title">Chave de API</div>
+
+      <div class="config-section">
+        <div class="form-group api-key-field">
+          <label>API Key <span id="api-key-label-ai" style="color:var(--accent)"></span></label>
+          <input type="password" class="form-input" id="api-key-input" placeholder="sk-... ou AIza..." autocomplete="off">
+          <button class="api-key-toggle" onclick="toggleKeyVisibility()">👁</button>
+        </div>
+        <div class="form-group">
+          <label>Meta calórica diária (kcal)</label>
+          <input type="number" class="form-input" id="calorie-goal-input" placeholder="2000" value="2000" inputmode="numeric">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveConfig()">Salvar configurações</button>
+      </div>
+
+      <div class="section-title">Dados</div>
+      <div class="config-section">
+        <button class="btn btn-secondary btn-full mb-8" onclick="exportData()">📤 Exportar dados (JSON)</button>
+        <button class="btn btn-danger btn-full" onclick="confirmClear()">🗑️ Limpar todos os dados</button>
+      </div>
+
+      <div style="height: 20px;"></div>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-today" onclick="navigate('today')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Hoje</span>
+    </button>
+    <button class="nav-btn" id="nav-charts" onclick="navigate('charts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Gráficos</span>
+    </button>
+    <button class="nav-btn" id="nav-log" onclick="navigate('log')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Histórico</span>
+    </button>
+    <button class="nav-btn" id="nav-report" onclick="navigate('report')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Relatório</span>
+    </button>
+    <button class="nav-btn" id="nav-config" onclick="navigate('config')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Config</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Meal Modal -->
+<div class="modal-overlay" id="meal-modal" style="display:none" onclick="closeMealModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar refeição</div>
+
+    <div class="form-group">
+      <label>Tipo de refeição</label>
+      <div class="tags" id="meal-type-tags">
+        <div class="tag active" data-mt="Café da manhã" onclick="selectMealType(this)">☕ Café da manhã</div>
+        <div class="tag" data-mt="Almoço" onclick="selectMealType(this)">🍽️ Almoço</div>
+        <div class="tag" data-mt="Jantar" onclick="selectMealType(this)">🌙 Jantar</div>
+        <div class="tag" data-mt="Lanche" onclick="selectMealType(this)">🥪 Lanche</div>
+        <div class="tag" data-mt="Ceia" onclick="selectMealType(this)">🌛 Ceia</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>O que você comeu?</label>
+      <textarea class="form-textarea" id="meal-desc" placeholder="Ex: Arroz integral 150g, frango grelhado 120g, salada de folhas, feijão carioca 100g..." style="min-height: 90px;"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Quantidade / Porção</label>
+      <input type="text" class="form-input" id="meal-qty" placeholder="Ex: 1 prato médio, 300g, 1 copo...">
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="saveMealWithAI()" id="analyze-btn">
+      ✨ Analisar com IA e salvar
+    </button>
+
+    <div id="meal-modal-ai-response"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let state = {
+  ai: 'claude',
+  apiKey: '',
+  calorieGoal: 2000,
+  records: {} // { "2025-01-15": { bp: [...], symptoms: [], notes: '', meals: [] } }
+};
+
+let selectedSymptoms = [];
+let selectedMealType = 'Café da manhã';
+let bpChart = null, calChart = null;
+let chartPeriod = 'day';
+
+const TODAY = () => new Date().toISOString().slice(0,10);
+
+function getRecord(date) {
+  if (!state.records[date]) state.records[date] = { bp: [], symptoms: [], notes: '', meals: [] };
+  return state.records[date];
+}
+
+// ══════════════════════════════════════════════
+//  PERSIST
+// ══════════════════════════════════════════════
+function save() { localStorage.setItem('diario_saude_v2', JSON.stringify(state)); }
+function load() {
+  const raw = localStorage.getItem('diario_saude_v2');
+  if (raw) { try { Object.assign(state, JSON.parse(raw)); } catch(e){} }
+  applyConfig();
+}
+
+function applyConfig() {
+  document.getElementById('ai-label').textContent = { claude: 'Claude', gpt: 'GPT-4o', gemini: 'Gemini' }[state.ai] || '—';
+  ['claude','gpt','gemini'].forEach(ai => {
+    const r = document.getElementById('radio-'+ai);
+    if(r) r.className = 'config-radio' + (state.ai === ai ? ' selected' : '');
+  });
+  document.getElementById('api-key-input').value = state.apiKey || '';
+  document.getElementById('calorie-goal-input').value = state.calorieGoal || 2000;
+  const labels = { claude: 'Claude', gpt: 'OpenAI', gemini: 'Google' };
+  document.getElementById('api-key-label-ai').textContent = labels[state.ai] || '';
+}
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  if (page === 'charts') renderCharts();
+  if (page === 'log') renderLog();
+}
+
+// ══════════════════════════════════════════════
+//  DATE
+// ══════════════════════════════════════════════
+function initDate() {
+  const now = new Date();
+  const opts = { weekday:'long', day:'numeric', month:'long' };
+  document.getElementById('header-date').textContent = now.toLocaleDateString('pt-BR', opts);
+  const rm = document.getElementById('report-month');
+  rm.value = TODAY().slice(0,7);
+}
+
+// ══════════════════════════════════════════════
+//  BLOOD PRESSURE
+// ══════════════════════════════════════════════
+function getBPStatus(sys, dia) {
+  if (sys < 120 && dia < 80) return { label: 'Normal', cls: 'bp-normal' };
+  if (sys < 130 && dia < 80) return { label: 'Elevada', cls: 'bp-elevated' };
+  if (sys < 140 || dia < 90) return { label: 'Alta I', cls: 'bp-high' };
+  return { label: 'Alta II', cls: 'bp-high' };
+}
+
+function updateBPDisplay() {
+  const sys = parseInt(document.getElementById('bp-sys').value) || 0;
+  const dia = parseInt(document.getElementById('bp-dia').value) || 0;
+  const bpm = parseInt(document.getElementById('bp-bpm').value) || 0;
+  if (sys && dia) {
+    document.getElementById('bp-display').textContent = sys+'/'+dia;
+    document.getElementById('bpm-display').textContent = bpm ? bpm+' bpm' : '— bpm';
+    const st = getBPStatus(sys, dia);
+    const badge = document.getElementById('bp-status-badge');
+    badge.textContent = st.label;
+    badge.className = 'bp-status ' + st.cls;
+  }
+}
+
+['bp-sys','bp-dia','bp-bpm'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateBPDisplay);
+});
+
+function saveBP() {
+  const sys = parseInt(document.getElementById('bp-sys').value);
+  const dia = parseInt(document.getElementById('bp-dia').value);
+  const bpm = parseInt(document.getElementById('bp-bpm').value) || 0;
+  if (!sys || !dia) { showToast('Preencha sistólica e diastólica', 'error'); return; }
+
+  const rec = getRecord(TODAY());
+  rec.bp.push({ sys, dia, bpm, ts: new Date().toISOString() });
+  save();
+  showToast('✅ Pressão registrada!', 'success');
+
+  // AI analysis
+  analyzeWithAI_BP(sys, dia, bpm);
+}
+
+// ══════════════════════════════════════════════
+//  SYMPTOMS
+// ══════════════════════════════════════════════
+function toggleSymptom(btn) {
+  btn.classList.toggle('active');
+  const s = btn.dataset.s;
+  if (selectedSymptoms.includes(s)) {
+    selectedSymptoms = selectedSymptoms.filter(x => x !== s);
+  } else {
+    selectedSymptoms.push(s);
+  }
+}
+
+function saveSymptoms() {
+  const notes = document.getElementById('symptoms-notes').value;
+  const rec = getRecord(TODAY());
+  rec.symptoms = [...selectedSymptoms];
+  rec.notes = notes;
+  save();
+  showToast('💬 Comentários salvos!', 'success');
+}
+
+// ══════════════════════════════════════════════
+//  MEALS
+// ══════════════════════════════════════════════
+function openMealModal() {
+  document.getElementById('meal-modal').style.display = 'flex';
+  document.getElementById('meal-desc').value = '';
+  document.getElementById('meal-qty').value = '';
+  document.getElementById('meal-modal-ai-response').innerHTML = '';
+}
+
+function closeMealModal(e) {
+  if (!e || e.target === document.getElementById('meal-modal'))
+    document.getElementById('meal-modal').style.display = 'none';
+}
+
+function selectMealType(el) {
+  document.querySelectorAll('#meal-type-tags .tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  selectedMealType = el.dataset.mt;
+}
+
+const MEAL_ICONS = { 'Café da manhã': '☕', 'Almoço': '🍽️', 'Jantar': '🌙', 'Lanche': '🥪', 'Ceia': '🌛' };
+
+async function saveMealWithAI() {
+  const desc = document.getElementById('meal-desc').value.trim();
+  const qty = document.getElementById('meal-qty').value.trim();
+  if (!desc) { showToast('Descreva o que você comeu', 'error'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.textContent = '⏳ Analisando...';
+  btn.disabled = true;
+
+  const respDiv = document.getElementById('meal-modal-ai-response');
+  respDiv.innerHTML = '<div class="ai-thinking"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Calculando calorias e nutrientes...</span></div>';
+
+  const prompt = `Você é um nutricionista especializado em hipertensão e controle glicêmico.
+
+Analise esta refeição e responda APENAS em JSON válido, sem markdown:
+{
+  "kcal": <número inteiro estimado>,
+  "sodium_mg": <sódio estimado em mg>,
+  "carbs_g": <carboidratos em g>,
+  "protein_g": <proteína em g>,
+  "fat_g": <gordura em g>,
+  "bp_impact": "positivo|neutro|negativo",
+  "glycemic_impact": "baixo|médio|alto",
+  "swap_suggestion": "<uma sugestão curta de troca inteligente para controle de PA e glicose, 1-2 frases>",
+  "tip": "<dica nutricional rápida, 1 frase>"
+}
+
+Refeição: ${selectedMealType} — ${desc}${qty ? ' — Porção: '+qty : ''}`;
+
+  try {
+    const raw = await callAI(prompt, 400);
+    let data;
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      data = JSON.parse(cleaned);
+    } catch(e) {
+      data = { kcal: 300, sodium_mg: 500, bp_impact: 'neutro', glycemic_impact: 'médio', swap_suggestion: 'Não foi possível analisar automaticamente.', tip: '' };
+    }
+
+    const meal = {
+      id: Date.now(),
+      type: selectedMealType,
+      desc, qty,
+      kcal: data.kcal || 0,
+      sodium_mg: data.sodium_mg || 0,
+      carbs_g: data.carbs_g || 0,
+      protein_g: data.protein_g || 0,
+      fat_g: data.fat_g || 0,
+      bp_impact: data.bp_impact || 'neutro',
+      glycemic_impact: data.glycemic_impact || 'médio',
+      swap: data.swap_suggestion || '',
+      tip: data.tip || '',
+      ts: new Date().toISOString()
+    };
+
+    const rec = getRecord(TODAY());
+    rec.meals.push(meal);
+    save();
+
+    const impactColor = { positivo: 'var(--green)', neutro: 'var(--amber)', negativo: 'var(--red)' };
+    const glycColor = { baixo: 'var(--green)', médio: 'var(--amber)', alto: 'var(--red)' };
+
+    respDiv.innerHTML = `
+      <div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <div style="display:flex;gap:16px;margin-bottom:10px;">
+          <div style="text-align:center"><div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--amber)">${data.kcal||0}</div><div style="font-size:10px;color:var(--text2)">kcal</div></div>
+          <div style="text-align:center"><div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--red)">${data.sodium_mg||0}</div><div style="font-size:10px;color:var(--text2)">mg sódio</div></div>
+          <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:${impactColor[data.bp_impact]||'var(--text)'}">${(data.bp_impact||'').toUpperCase()}</div><div style="font-size:10px;color:var(--text2)">PA</div></div>
+          <div style="text-align:center"><div style="font-size:14px;font-weight:700;color:${glycColor[data.glycemic_impact]||'var(--text)'}">${(data.glycemic_impact||'').toUpperCase()}</div><div style="font-size:10px;color:var(--text2)">Glicemia</div></div>
+        </div>
+        ${data.swap_suggestion ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;padding:8px;background:rgba(59,158,255,0.08);border-radius:8px;border-left:2px solid var(--accent)">💡 <strong style="color:var(--text)">Troca inteligente:</strong> ${data.swap_suggestion}</div>` : ''}
+        ${data.tip ? `<div style="font-size:11px;color:var(--text3)">🥗 ${data.tip}</div>` : ''}
+      </div>`;
+
+    renderMeals();
+    btn.textContent = '✅ Salvo! Adicionar outra';
+    btn.disabled = false;
+    setTimeout(() => {
+      btn.textContent = '✨ Analisar com IA e salvar';
+    }, 3000);
+
+  } catch(err) {
+    respDiv.innerHTML = `<div style="color:var(--red);font-size:13px;margin-top:8px;">❌ Erro: ${err.message}. Verifique a API Key nas configurações.</div>`;
+    btn.textContent = '✨ Analisar com IA e salvar';
+    btn.disabled = false;
+  }
+}
+
+function renderMeals() {
+  const rec = getRecord(TODAY());
+  const meals = rec.meals || [];
+  const list = document.getElementById('meals-list');
+  const calSection = document.getElementById('calorie-section');
+
+  if (meals.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><div class="empty-state-text">Nenhuma refeição registrada hoje.<br>Toque em "+ Adicionar" para começar.</div></div>';
+    calSection.style.display = 'none';
+    return;
+  }
+
+  const total = meals.reduce((s, m) => s + (m.kcal || 0), 0);
+  const goal = state.calorieGoal || 2000;
+  const pct = Math.min(100, Math.round(total/goal*100));
+
+  list.innerHTML = meals.map((m, i) => `
+    <div class="meal-item">
+      <div class="meal-icon">${MEAL_ICONS[m.type] || '🍽️'}</div>
+      <div class="meal-info">
+        <div class="meal-name">${m.type}</div>
+        <div class="meal-detail">${m.desc.slice(0,60)}${m.desc.length>60?'…':''}</div>
+      </div>
+      <div class="meal-kcal">${m.kcal}kcal</div>
+      <button class="meal-del" onclick="deleteMeal(${i})" aria-label="Remover refeição">✕</button>
+    </div>`).join('');
+
+  calSection.style.display = 'block';
+  document.getElementById('cal-total').textContent = total;
+  document.getElementById('cal-goal').textContent = goal;
+  const bar = document.getElementById('cal-bar');
+  bar.style.width = pct+'%';
+  bar.className = 'calorie-bar-fill' + (pct >= 100 ? ' over' : pct >= 85 ? ' near' : '');
+}
+
+function deleteMeal(idx) {
+  const rec = getRecord(TODAY());
+  rec.meals.splice(idx, 1);
+  save();
+  renderMeals();
+}
+
+// ══════════════════════════════════════════════
+//  AI CALLS
+// ══════════════════════════════════════════════
+async function callAI(prompt, maxTokens = 800) {
+  const key = state.apiKey;
+  if (!key) throw new Error('Configure uma API Key nas configurações.');
+
+  if (state.ai === 'claude') {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.content[0].text;
+  }
+
+  if (state.ai === 'gpt') {
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+key },
+      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.choices[0].message.content;
+  }
+
+  if (state.ai === 'gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    return d.candidates[0].content.parts[0].text;
+  }
+
+  throw new Error('IA não configurada');
+}
+
+async function analyzeWithAI_BP(sys, dia, bpm) {
+  const key = state.apiKey;
+  if (!key) return;
+
+  const respDiv = document.getElementById('ai-bp-response');
+  respDiv.innerHTML = '<div class="ai-thinking"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Analisando pressão com IA...</span></div>';
+
+  const rec = getRecord(TODAY());
+  const symptomsStr = rec.symptoms.length ? rec.symptoms.join(', ') : 'nenhum';
+
+  try {
+    const text = await callAI(`Você é um médico especialista em hipertensão. Analise brevemente:
+
+Pressão aferida: ${sys}/${dia} mmHg${bpm ? ', FC '+bpm+' bpm' : ''}
+Sintomas hoje: ${symptomsStr}
+
+Forneça:
+1. Interpretação do valor (1-2 frases)
+2. Alertas importantes se necessário
+3. 2 orientações práticas de estilo de vida para hoje
+
+Resposta em português, tom clínico mas acessível, máximo 120 palavras.`, 300);
+
+    respDiv.innerHTML = `<div class="ai-response">🩺 <strong>Análise da pressão:</strong>\n\n${text}</div>`;
+  } catch(e) {
+    respDiv.innerHTML = '';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════
+function setChartPeriod(period, el) {
+  chartPeriod = period;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCharts();
+}
+
+function getChartData() {
+  const dates = Object.keys(state.records).sort();
+  const now = new Date();
+  let filtered;
+
+  if (chartPeriod === 'day') {
+    filtered = dates.slice(-7);
+  } else if (chartPeriod === 'week') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 28);
+    filtered = dates.filter(d => new Date(d) >= cutoff);
+  } else {
+    const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - 3);
+    filtered = dates.filter(d => new Date(d) >= cutoff);
+  }
+
+  const labels = [], sys = [], dia = [], cals = [];
+  filtered.forEach(d => {
+    const rec = state.records[d];
+    const bp = rec.bp || [];
+    const meals = rec.meals || [];
+    const avgSys = bp.length ? Math.round(bp.reduce((s,b)=>s+b.sys,0)/bp.length) : null;
+    const avgDia = bp.length ? Math.round(bp.reduce((s,b)=>s+b.dia,0)/bp.length) : null;
+    const totalCal = meals.reduce((s,m)=>s+(m.kcal||0),0);
+    const short = d.slice(5);
+    labels.push(short);
+    sys.push(avgSys);
+    dia.push(avgDia);
+    cals.push(totalCal || 0);
+  });
+
+  return { labels, sys, dia, cals };
+}
+
+function renderCharts() {
+  const { labels, sys, dia, cals } = getChartData();
+
+  // Stats
+  const validSys = sys.filter(v => v !== null);
+  const validDia = dia.filter(v => v !== null);
+  if (validSys.length) {
+    const avgS = Math.round(validSys.reduce((a,b)=>a+b,0)/validSys.length);
+    const avgD = Math.round(validDia.reduce((a,b)=>a+b,0)/validDia.length);
+    document.getElementById('stat-avg').textContent = avgS+'/'+avgD;
+    document.getElementById('stat-max').textContent = Math.max(...validSys);
+    document.getElementById('stat-count').textContent = Object.values(state.records).reduce((s,r)=>s+(r.bp||[]).length,0);
+  } else {
+    document.getElementById('stat-avg').textContent = '--';
+    document.getElementById('stat-max').textContent = '--';
+    document.getElementById('stat-count').textContent = 0;
+  }
+
+  // BP Chart
+  if (bpChart) bpChart.destroy();
+  const bpCtx = document.getElementById('bp-chart').getContext('2d');
+  bpChart = new Chart(bpCtx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Sistólica',
+          data: sys,
+          borderColor: '#ff5252',
+          backgroundColor: 'rgba(255,82,82,0.08)',
+          tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#ff5252',
+          borderWidth: 2, spanGaps: true,
+          borderDash: [],
+          pointStyle: 'circle'
+        },
+        {
+          label: 'Diastólica',
+          data: dia,
+          borderColor: '#3b9eff',
+          backgroundColor: 'rgba(59,158,255,0.08)',
+          tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#3b9eff',
+          borderWidth: 2, spanGaps: true,
+          borderDash: [5,3],
+          pointStyle: 'triangle'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        annotation: {}
+      },
+      scales: {
+        y: {
+          min: 50, max: 200,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#5a7a96', font: { size: 11 } }
+        },
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#5a7a96', font: { size: 11 }, maxRotation: 45, autoSkip: false }
+        }
+      }
+    }
+  });
+
+  // Custom legend
+  const legHtml = `
+    <div style="display:flex;gap:16px;margin-bottom:8px;font-size:12px;color:#5a7a96;padding:0 4px">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:3px;background:#ff5252;border-radius:2px;display:inline-block"></span>Sistólica</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:3px;background:#3b9eff;border-radius:2px;display:inline-block;border-top:1px dashed #3b9eff"></span>Diastólica</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:1px;background:#2ecc87;border-top:1px dashed #2ecc87;display:inline-block"></span>Meta (&lt;120/80)</span>
+    </div>`;
+
+  // Cal Chart
+  if (calChart) calChart.destroy();
+  const calCtx = document.getElementById('cal-chart').getContext('2d');
+  calChart = new Chart(calCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Calorias',
+        data: cals,
+        backgroundColor: cals.map(c => c > (state.calorieGoal||2000) ? 'rgba(255,82,82,0.6)' : 'rgba(59,158,255,0.6)'),
+        borderColor: cals.map(c => c > (state.calorieGoal||2000) ? '#ff5252' : '#3b9eff'),
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#5a7a96', font: { size: 11 } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#5a7a96', font: { size: 11 }, autoSkip: false }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  LOG
+// ══════════════════════════════════════════════
+function renderLog() {
+  const dates = Object.keys(state.records).sort().reverse();
+  const list = document.getElementById('log-list');
+
+  if (!dates.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum registro ainda.<br>Comece registrando hoje!</div></div>';
+    return;
+  }
+
+  list.innerHTML = dates.map(d => {
+    const rec = state.records[d];
+    const bp = (rec.bp||[]);
+    const lastBP = bp.length ? `${bp[bp.length-1].sys}/${bp[bp.length-1].dia}` : '—';
+    const meals = rec.meals||[];
+    const totalCal = meals.reduce((s,m)=>s+(m.kcal||0),0);
+    const symptoms = (rec.symptoms||[]).join(', ') || '—';
+    const [y,mo,dy] = d.split('-');
+    const dateStr = `${dy}/${mo}/${y}`;
+
+    return `
+      <div class="log-day">
+        <div class="log-day-header" onclick="toggleLog(this)">
+          <div>
+            <div class="log-day-date">${dateStr}</div>
+            <div class="log-day-summary">${lastBP} mmHg · ${totalCal} kcal</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a7a96" stroke-width="2" class="log-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="log-day-body">
+          ${bp.length ? `<div class="text-sm text-muted mb-8"><strong style="color:var(--text)">Pressão:</strong> ${bp.map(b=>`${b.sys}/${b.dia}${b.bpm?' ('+b.bpm+'bpm)':''}`).join(' · ')}</div>` : ''}
+          ${rec.symptoms&&rec.symptoms.length ? `<div class="text-sm text-muted mb-8"><strong style="color:var(--text)">Sintomas:</strong> ${symptoms}</div>` : ''}
+          ${rec.notes ? `<div class="text-sm text-muted mb-8"><strong style="color:var(--text)">Notas:</strong> ${rec.notes}</div>` : ''}
+          ${meals.length ? `<div class="text-sm text-muted"><strong style="color:var(--text)">Refeições:</strong> ${meals.map(m=>`${m.type} (${m.kcal}kcal)`).join(' · ')}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleLog(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.log-chevron');
+  body.classList.toggle('open');
+  chevron.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// ══════════════════════════════════════════════
+//  REPORT
+// ══════════════════════════════════════════════
+async function generateReport() {
+  const month = document.getElementById('report-month').value;
+  if (!month) { showToast('Selecione um mês', 'error'); return; }
+  if (!state.apiKey) { showToast('Configure a API Key primeiro', 'error'); navigate('config'); return; }
+
+  const output = document.getElementById('report-output');
+  output.innerHTML = '<div class="ai-thinking" style="padding:20px 0"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Gerando relatório mensal com IA...</span></div>';
+
+  const [y, mo] = month.split('-');
+  const monthDates = Object.keys(state.records).filter(d => d.startsWith(month)).sort();
+
+  if (monthDates.length < 3) {
+    output.innerHTML = '<div class="card"><div style="color:var(--text2);font-size:14px;text-align:center;padding:20px">Registros insuficientes para este mês.<br>São necessários pelo menos 3 dias de dados.</div></div>';
+    return;
+  }
+
+  const monthData = monthDates.map(d => {
+    const rec = state.records[d];
+    const bp = rec.bp||[];
+    const meals = rec.meals||[];
+    return {
+      data: d,
+      pressoes: bp.map(b=>`${b.sys}/${b.dia}`),
+      sintomas: rec.symptoms||[],
+      notas: rec.notes||'',
+      totalKcal: meals.reduce((s,m)=>s+(m.kcal||0),0),
+      refeicoes: meals.map(m=>m.type+': '+m.desc.slice(0,50)).join('; ')
+    };
+  });
+
+  const monthNames = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const goal = parseInt(document.getElementById('report-goal').value) || 2000;
+
+  const prompt = `Você é um médico e nutricionista especializado em hipertensão. Analise os dados de saúde do paciente e gere um relatório mensal completo em português.
+
+Mês: ${monthNames[parseInt(mo)]}/${y}
+Meta calórica: ${goal} kcal/dia
+Dados coletados (${monthDates.length} dias):
+
+${JSON.stringify(monthData, null, 2)}
+
+Estruture o relatório com estas seções:
+1. **RESUMO DO MÊS** — visão geral em 2-3 frases
+2. **PRESSÃO ARTERIAL** — análise de tendências, picos, médias, classificação geral
+3. **ALIMENTAÇÃO** — aderência calórica, padrões identificados, alimentos frequentes
+4. **SINTOMAS RECORRENTES** — padrões observados
+5. **MELHORIAS IDENTIFICADAS** — pontos positivos concretos
+6. **PONTOS DE ATENÇÃO** — riscos ou pioras observadas
+7. **RECOMENDAÇÕES PARA O PRÓXIMO MÊS** — 3 a 5 orientações práticas específicas para controle de PA e glicose
+
+Seja específico com os dados. Use linguagem clara e acessível. Máximo 400 palavras.`;
+
+  try {
+    const text = await callAI(prompt, 700);
+    const [y2, mo2] = month.split('-');
+    output.innerHTML = `
+      <div class="report-card">
+        <div class="report-month">Relatório — ${monthNames[parseInt(mo2)]}/${y2}</div>
+        <div class="report-title">📊 Análise Mensal de Saúde</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text2);white-space:pre-wrap">${text.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--text)">$1</strong>')}</div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;color:var(--text3)">Dias registrados</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--accent)">${monthDates.length}</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;color:var(--text3)">Aferições PA</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--red)">${monthData.reduce((s,d)=>s+d.pressoes.length,0)}</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:10px;background:var(--bg3);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;color:var(--text3)">Refeições</div>
+            <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--green)">${Object.values(state.records).reduce((s,r)=>s+(r.meals||[]).length,0)}</div>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    output.innerHTML = `<div class="card"><div style="color:var(--red);font-size:14px">❌ Erro ao gerar relatório: ${e.message}</div></div>`;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+function selectAI(ai) {
+  state.ai = ai;
+  applyConfig();
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('api-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function saveConfig() {
+  state.ai = state.ai || 'claude';
+  state.apiKey = document.getElementById('api-key-input').value.trim();
+  state.calorieGoal = parseInt(document.getElementById('calorie-goal-input').value) || 2000;
+  save();
+  applyConfig();
+  showToast('✅ Configurações salvas!', 'success');
+  navigate('today');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'diario-saude-' + TODAY() + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('📤 Dados exportados!', 'success');
+}
+
+function confirmClear() {
+  if (confirm('Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.')) {
+    state.records = {};
+    save();
+    showToast('🗑️ Dados apagados', 'success');
+    renderMeals();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type + ' show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  load();
+  initDate();
+  renderMeals();
+
+  // Load today's symptoms if any
+  const rec = getRecord(TODAY());
+  if (rec.symptoms) {
+    rec.symptoms.forEach(s => {
+      document.querySelectorAll('.symptom-btn').forEach(btn => {
+        if (btn.dataset.s === s) btn.classList.add('active');
+      });
+      selectedSymptoms = [...rec.symptoms];
+    });
+  }
+  if (rec.notes) document.getElementById('symptoms-notes').value = rec.notes;
+  if (rec.bp && rec.bp.length) {
+    const last = rec.bp[rec.bp.length-1];
+    document.getElementById('bp-sys').value = last.sys;
+    document.getElementById('bp-dia').value = last.dia;
+    document.getElementById('bp-bpm').value = last.bpm || '';
+    updateBPDisplay();
+  }
+
+  // Show welcome if no API key
+  if (!state.apiKey) {
+    setTimeout(() => showToast('⚙️ Configure sua API Key para usar a IA', 'success'), 800);
+  }
+});
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
